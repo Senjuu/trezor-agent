@@ -25,8 +25,10 @@ SSH_NIST256_DER_OCTET = b'\x04'
 SSH_NIST256_KEY_PREFIX = b'ecdsa-sha2-'
 SSH_NIST256_CURVE_NAME = b'nistp256'
 SSH_NIST256_KEY_TYPE = SSH_NIST256_KEY_PREFIX + SSH_NIST256_CURVE_NAME
+SSH_NIST256_CERT_POSTFIX = b'-cert-v01@openssh.com'
+SSH_NIST256_CERT_TYPE = SSH_NIST256_KEY_TYPE + SSH_NIST256_CERT_POSTFIX
 SSH_ED25519_KEY_TYPE = b'ssh-ed25519'
-SUPPORTED_KEY_TYPES = {SSH_NIST256_KEY_TYPE, SSH_ED25519_KEY_TYPE}
+SUPPORTED_KEY_TYPES = {SSH_NIST256_KEY_TYPE, SSH_NIST256_CERT_TYPE, SSH_ED25519_KEY_TYPE}
 
 hashfunc = hashlib.sha256
 
@@ -57,10 +59,39 @@ def parse_pubkey(blob):
 
     result = {'blob': blob, 'type': key_type, 'fingerprint': fp}
 
-    if key_type == SSH_NIST256_KEY_TYPE:
+    if key_type == SSH_NIST256_KEY_TYPE or key_type == SSH_NIST256_CERT_TYPE:
+        if key_type == SSH_NIST256_CERT_TYPE:
+            # nonce
+            _ = util.read_frame(s)
+
         curve_name = util.read_frame(s)
         log.debug('curve name: %s', curve_name)
         point = util.read_frame(s)
+
+        if key_type == SSH_NIST256_CERT_TYPE:
+            # serial_number (64 bit)
+            _ = util.recv(s, '>Q')
+            # type (32 bit)
+            _ = util.recv(s, '>L')
+            # key_id
+            _ = util.read_frame(s)
+            # valid_principals
+            _ = util.read_frame(s)
+            # valid_after (64 bit)
+            _ = util.recv(s, '>Q')
+            # valid_before (64 bit)
+            _ = util.recv(s, '>Q')
+            # critical_options
+            _ = util.read_frame(s)
+            # extensions
+            _ = util.read_frame(s)
+            # reserved
+            _ = util.read_frame(s)
+            # signature_key
+            _ = util.read_frame(s)
+            # signature
+            _ = util.read_frame(s)
+
         assert s.read() == b''
         _type, point = point[:1], point[1:]
         assert _type == SSH_NIST256_DER_OCTET
