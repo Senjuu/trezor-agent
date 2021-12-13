@@ -61,36 +61,24 @@ def parse_pubkey(blob):
 
     if key_type == SSH_NIST256_KEY_TYPE or key_type == SSH_NIST256_CERT_TYPE:
         if key_type == SSH_NIST256_CERT_TYPE:
-            # nonce
-            _ = util.read_frame(s)
+            _nonce = util.read_frame(s)
 
         curve_name = util.read_frame(s)
         log.debug('curve name: %s', curve_name)
         point = util.read_frame(s)
 
         if key_type == SSH_NIST256_CERT_TYPE:
-            # serial_number (64 bit)
-            _ = util.recv(s, '>Q')
-            # type (32 bit)
-            _ = util.recv(s, '>L')
-            # key_id
-            _ = util.read_frame(s)
-            # valid_principals
-            _ = util.read_frame(s)
-            # valid_after (64 bit)
-            _ = util.recv(s, '>Q')
-            # valid_before (64 bit)
-            _ = util.recv(s, '>Q')
-            # critical_options
-            _ = util.read_frame(s)
-            # extensions
-            _ = util.read_frame(s)
-            # reserved
-            _ = util.read_frame(s)
-            # signature_key
-            _ = util.read_frame(s)
-            # signature
-            _ = util.read_frame(s)
+            _serial_number = util.recv(s, '>Q')
+            _type = util.recv(s, '>L')
+            _key_id = util.read_frame(s)
+            _valid_principals = util.read_frame(s)
+            _valid_after = util.recv(s, '>Q')
+            _valid_before = util.recv(s, '>Q')
+            _critical_options = util.read_frame(s)
+            _extensions = util.read_frame(s)
+            _reserved = util.read_frame(s)
+            _signature_key = util.read_frame(s)
+            _signature = util.read_frame(s)
 
         assert s.read() == b''
         _type, point = point[:1], point[1:]
